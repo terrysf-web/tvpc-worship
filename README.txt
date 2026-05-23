@@ -1,13 +1,19 @@
-TVPC Worship Existing App Restore
+TVPC Worship - Existing UI Stable Writing v1
 
-이 파일은 기존에 쓰던 tvpc-worship 앱 UI/기능을 그대로 복구하는 파일입니다.
-테스트 UI, 빨간 배지, stable viewer UI는 포함하지 않았습니다.
+기존 tvpc-worship UI/흐름은 그대로 유지하고, 쓰기 엔진만 보강한 버전입니다.
 
 변경:
-- 기존 UI/기능 유지
-- Share URL만 tvpc-worship 운영 주소로 고정
+- Service 악보 화면의 Crop/Zoom/Reset 툴바 숨김
+- PDF canvas는 클릭/터치 입력을 받지 않게 처리
+- Annotation canvas를 위 레이어로 올림
+- 필기 시작 시 pointer capture 적용
+- pointerleave로 stroke가 끊기지 않게 처리
+- quadratic smoothing 적용
+- 필기 모드에서 swipe/navigation 잠금
+- 캐시 soft reset 포함, 화면 배지 없음
+- Share URL은 tvpc-worship 운영 주소로 고정
 
-적용:
-1. ZIP 압축 풀기
-2. tvpc-worship repo root에 모든 파일 업로드/교체
-3. GitHub Pages 새로고침
+적용 후 열기:
+https://terrysf-web.github.io/tvpc-worship/index.html?v=stable-writing-v1
+
+홈화면 앱은 기존 아이콘 삭제 후 다시 추가 권장.
