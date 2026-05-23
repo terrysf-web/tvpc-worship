@@ -3452,46 +3452,101 @@ ProPresenter 노트에 붙여넣기 하세요.`));else{const u=document.createEl
     <style rel="stylesheet" crossorigin>*,*:before,*:after{box-sizing:border-box}html{height:100%;overscroll-behavior:none}body{height:100%;margin:0;padding:0;overflow:hidden;overscroll-behavior:none;-webkit-overflow-scrolling:touch}#root{height:100%;width:100%;overflow:hidden}</style>
   
 <style>
-/* Service Mode Clean UI */
-.service-mode button,
-.service-mode .toolbar,
-.service-mode .controls {
-  display: none !important;
+/* Locked Service Viewer Mode */
+body.service-mode {
+  overscroll-behavior-x: none !important;
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+}
+
+/* Hide edit/crop/zoom controls in service mode */
+body.service-mode button,
+body.service-mode .toolbar,
+body.service-mode .controls {
+  transition: none !important;
 }
 </style>
 
 <script>
-(function() {
-  function enableServiceMode() {
-    const isService =
-      location.hash.includes('service') ||
-      document.body.innerText.includes('주일') ||
-      document.body.innerText.includes('예배');
+(function () {
 
-    if (!isService) return;
-
-    document.body.classList.add('service-mode');
-
-    function hideUI() {
-      document.querySelectorAll('button, span, div').forEach(el => {
-        const txt = (el.innerText || '').trim();
-
-        if (
-          txt === '+' ||
-          txt === '-' ||
-          txt === 'Reset' ||
-          txt === '저장' ||
-          txt.includes('%')
-        ) {
-          el.style.display = 'none';
-        }
-      });
-    }
-
-    setInterval(hideUI, 300);
+  function isServiceMode() {
+    return true; // force enable for worship service viewer
   }
 
-  window.addEventListener('load', enableServiceMode);
+  function hideServiceUI() {
+    if (!document.body.classList.contains('service-mode')) return;
+
+    document.querySelectorAll('button,div,span').forEach((el) => {
+      const txt = (el.innerText || '').trim();
+
+      if (
+        txt === '+' ||
+        txt === '-' ||
+        txt === 'Reset' ||
+        txt === '저장' ||
+        txt.includes('%') ||
+        txt.toLowerCase().includes('crop')
+      ) {
+        el.style.display = 'none';
+      }
+    });
+  }
+
+  function lockBrowserBack() {
+    history.pushState(null, '', location.href);
+
+    window.addEventListener('popstate', function () {
+      history.pushState(null, '', location.href);
+    });
+  }
+
+  function preventEdgeSwipe() {
+
+    let startX = 0;
+
+    document.addEventListener('touchstart', function (e) {
+
+      if (!e.touches || !e.touches.length) return;
+
+      startX = e.touches[0].clientX;
+
+      // left edge dead zone
+      if (startX < 45) {
+        e.preventDefault();
+      }
+
+    }, { passive: false });
+
+    document.addEventListener('touchmove', function (e) {
+
+      if (!e.touches || !e.touches.length) return;
+
+      const currentX = e.touches[0].clientX;
+
+      // stop iPad safari back gesture
+      if (startX < 45 && currentX > startX) {
+        e.preventDefault();
+      }
+
+    }, { passive: false });
+  }
+
+  window.addEventListener('load', function () {
+
+    if (isServiceMode()) {
+      document.body.classList.add('service-mode');
+
+      hideServiceUI();
+
+      setInterval(hideServiceUI, 500);
+
+      lockBrowserBack();
+
+      preventEdgeSwipe();
+    }
+  });
+
 })();
 </script>
 
