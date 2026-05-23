@@ -3453,5 +3453,91 @@ ProPresenter 노트에 붙여넣기 하세요.`));else{const u=document.createEl
   </head>
   <body>
     <div id="root"></div>
-  </body>
+  <script>
+(function(){
+  const STORE='worshipcharts_photo_crop_v2';
+  const $=s=>document.querySelector(s);
+  const load=()=>{try{return JSON.parse(localStorage.getItem(STORE)||'{}')}catch(e){return {}}};
+  const save=o=>localStorage.setItem(STORE,JSON.stringify(o));
+  function songKey(){
+    const texts=[...document.querySelectorAll('span,div')].map(e=>(e.textContent||'').trim()).filter(t=>t&&t.length<80);
+    const hit=texts.find(t=>!/^(Home|Song Library|PDF|저장|취소|Crop|Reset|툴바|삭제|이전|다음)/.test(t) && !t.includes('%'));
+    return 'song:'+(hit||location.pathname);
+  }
+  function pageBox(){
+    const canv=[...document.querySelectorAll('canvas')].filter(c=>c.width>200&&c.height>200&&c.getBoundingClientRect().width>100);
+    if(!canv.length) return null;
+    const c=canv[0];
+    let p=c.parentElement;
+    for(let i=0;i<5&&p;i++,p=p.parentElement){
+      const r=p.getBoundingClientRect();
+      if(r.width>=c.getBoundingClientRect().width-5 && r.height>=c.getBoundingClientRect().height-5) return p;
+    }
+    return c.parentElement;
+  }
+  function ensureUI(){
+    if($('#photoCropPanel')) return;
+    const div=document.createElement('div');
+    div.id='photoCropPanel';
+    div.innerHTML='<button id="pcEdit">✂️ 사진식 Crop</button><button id="pcSave">저장</button><button id="pcReset">Reset</button><span id="pcMsg"></span>';
+    document.body.appendChild(div);
+    const st=document.createElement('style');
+    st.textContent=`#photoCropPanel{position:fixed;top:56px;right:10px;z-index:9999;display:none;gap:6px;align-items:center;background:rgba(255,255,255,.96);border:1px solid #dbe3ef;border-radius:16px;padding:6px 7px;box-shadow:0 4px 18px rgba(0,0,0,.18);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif}#photoCropPanel button{border:0;border-radius:11px;padding:7px 10px;font-size:12px;font-weight:800;background:#f1f5f9;color:#334155}#photoCropPanel #pcSave{background:#2563eb;color:#fff}#pcMsg{font-size:11px;color:#64748b;min-width:28px}.pc-overlay{position:absolute;z-index:9998;border:2px solid #2563eb;background:rgba(37,99,235,.08);box-shadow:0 0 0 9999px rgba(0,0,0,.38);touch-action:none}.pc-h{position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #2563eb;box-shadow:0 1px 4px rgba(0,0,0,.25)}.pc-h.nw{left:-12px;top:-12px}.pc-h.ne{right:-12px;top:-12px}.pc-h.sw{left:-12px;bottom:-12px}.pc-h.se{right:-12px;bottom:-12px}.pc-h.n{left:50%;top:-12px;transform:translateX(-50%)}.pc-h.s{left:50%;bottom:-12px;transform:translateX(-50%)}.pc-h.w{left:-12px;top:50%;transform:translateY(-50%)}.pc-h.e{right:-12px;top:50%;transform:translateY(-50%)}`;
+    document.head.appendChild(st);
+    $('#pcEdit').onclick=startEdit; $('#pcSave').onclick=commitCrop; $('#pcReset').onclick=resetCrop;
+  }
+  let current=null, overlay=null, rect=null;
+  function setMsg(t){const m=$('#pcMsg'); if(m){m.textContent=t; setTimeout(()=>{if(m.textContent===t)m.textContent=''},1500)}}
+  function applyCrop(crop){
+    const box=pageBox(); if(!box||!crop) return;
+    const canv=box.querySelector('canvas'); if(!canv) return;
+    const w=canv.getBoundingClientRect().width, h=canv.getBoundingClientRect().height;
+    const L=Math.round(crop.l*w), T=Math.round(crop.t*h), R=Math.round(crop.r*w), B=Math.round(crop.b*h);
+    const cw=Math.max(80,w-L-R), ch=Math.max(80,h-T-B);
+    box.dataset.photoCrop='1';
+    box.style.width=cw+'px'; box.style.height=ch+'px'; box.style.overflow='hidden'; box.style.position='relative';
+    box.querySelectorAll('canvas').forEach(c=>{c.style.transform=`translate(${-L}px,${-T}px)`; c.style.transformOrigin='top left';});
+  }
+  function clearCropStyle(){
+    const box=pageBox(); if(!box) return;
+    box.style.width=''; box.style.height=''; box.style.overflow='hidden';
+    box.querySelectorAll('canvas').forEach(c=>{c.style.transform=''; c.style.transformOrigin='';});
+  }
+  function startEdit(){
+    const box=pageBox(); if(!box) return;
+    clearOverlay(); current=box; clearCropStyle();
+    const r=box.getBoundingClientRect();
+    rect={x:r.width*.06,y:r.height*.04,w:r.width*.88,h:r.height*.92};
+    const data=load()[songKey()];
+    if(data){rect={x:data.l*r.width,y:data.t*r.height,w:(1-data.l-data.r)*r.width,h:(1-data.t-data.b)*r.height}}
+    overlay=document.createElement('div'); overlay.className='pc-overlay';
+    ['nw','n','ne','e','se','s','sw','w'].forEach(cls=>{const h=document.createElement('div'); h.className='pc-h '+cls; h.dataset.h=cls; overlay.appendChild(h)});
+    box.appendChild(overlay); drawOverlay(); bindDrag(box);
+    setMsg('조절 후 저장');
+  }
+  function drawOverlay(){if(!overlay||!rect)return; Object.assign(overlay.style,{left:rect.x+'px',top:rect.y+'px',width:rect.w+'px',height:rect.h+'px'});}
+  function bindDrag(box){
+    let mode=null,start=null,orig=null;
+    overlay.onpointerdown=e=>{e.preventDefault(); overlay.setPointerCapture(e.pointerId); mode=e.target.dataset.h||'move'; start={x:e.clientX,y:e.clientY}; orig={...rect};};
+    overlay.onpointermove=e=>{if(!mode)return; const dx=e.clientX-start.x, dy=e.clientY-start.y; const br=box.getBoundingClientRect(); let n={...orig};
+      if(mode==='move'){n.x=orig.x+dx;n.y=orig.y+dy}else{
+        if(mode.includes('w')){n.x=orig.x+dx;n.w=orig.w-dx} if(mode.includes('e')) n.w=orig.w+dx;
+        if(mode.includes('n')){n.y=orig.y+dy;n.h=orig.h-dy} if(mode.includes('s')) n.h=orig.h+dy;
+      }
+      n.w=Math.max(80,n.w); n.h=Math.max(80,n.h); n.x=Math.max(0,Math.min(n.x,br.width-n.w)); n.y=Math.max(0,Math.min(n.y,br.height-n.h)); rect=n; drawOverlay();};
+    overlay.onpointerup=e=>{mode=null; try{overlay.releasePointerCapture(e.pointerId)}catch(_){}};
+  }
+  function commitCrop(){
+    const box=current||pageBox(); if(!box||!rect){setMsg('Crop 없음');return;}
+    const r=box.getBoundingClientRect();
+    const crop={l:rect.x/r.width,t:rect.y/r.height,r:Math.max(0,(r.width-rect.x-rect.w)/r.width),b:Math.max(0,(r.height-rect.y-rect.h)/r.height)};
+    const all=load(); all[songKey()]=crop; save(all); clearOverlay(); applyCrop(crop); setMsg('저장됨');
+  }
+  function resetCrop(){const all=load(); delete all[songKey()]; save(all); clearOverlay(); clearCropStyle(); setMsg('리셋됨')}
+  function clearOverlay(){if(overlay){overlay.remove(); overlay=null;} current=null; rect=null;}
+  function tick(){ensureUI(); const box=pageBox(), panel=$('#photoCropPanel'); if(panel) panel.style.display=box?'flex':'none'; if(box&&!overlay&&box.dataset.photoCrop!=='1'){const c=load()[songKey()]; if(c) applyCrop(c);} }
+  setInterval(tick,900); window.addEventListener('resize',()=>setTimeout(tick,200));
+})();
+</script>
+</body>
 </html>
