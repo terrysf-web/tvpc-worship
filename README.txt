@@ -1,14 +1,13 @@
-TVPC Worship - Pencil No Flicker Update
+TVPC Worship - Restore Writing
 
-기존 UI/기능은 그대로 유지했습니다.
+이 버전은 Pencil/gesture 패치를 제거하고 원래 필기 동작으로 복구한 버전입니다.
 
-이번 수정:
-- Apple Pencil 이벤트를 막지 않습니다.
-- Pencil 입력 중에는 viewer swipe navigation만 일시 중지합니다.
-- 이전 업데이트처럼 pen/stylus를 swipe handler에서 완전히 무시하지 않습니다.
-- 강한 touch-action:none 전역 처리는 넣지 않았습니다. 깜빡임/리렌더링을 줄이기 위함입니다.
-- Share URL은 tvpc-worship 운영 주소로 고정했습니다.
+유지:
+- 기존 UI/기능
+- 기존 annotation/write 동작
+- Share URL은 tvpc-worship 운영 주소로 고정
 
-iPad 권장:
-- 설정 > Apple Pencil > 손글씨 입력(Scribble) OFF
-- 홈화면 앱 완전히 종료 후 다시 실행
+적용:
+1. ZIP 압축 풀기
+2. tvpc-worship repo root에 파일 업로드/교체
+3. iPad 홈화면 앱 완전히 종료 후 다시 실행
