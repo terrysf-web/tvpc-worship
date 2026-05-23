@@ -1,9 +1,334 @@
-<!DOCTYPE html><div style="padding:20px;text-align:center;background:#09090b">
-<img src="ainos-logo.jpg" style="max-width:320px;width:100%;border-radius:20px;">
-</div><html><head><meta charset='UTF-8'><title>Ainos Worship</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#05070b">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="icon-512.png">
-</head><body style='background:#05070b;color:white;font-family:sans-serif'><h1>Ainos Worship PDF MVP</h1></body></html>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Ainos Worship Charts</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#05070b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Ainos" />
+  <link rel="apple-touch-icon" href="ainos-logo.jpg" />
+  <style>
+    :root {
+      --bg:#05070b; --panel:#09090b; --card:#18181b; --card2:#020617;
+      --border:#27272a; --text:#fff; --muted:#a1a1aa; --cyan:#22d3ee; --amber:#f59e0b;
+    }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html, body, #app { margin:0; width:100%; height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    button, input, textarea { font:inherit; }
+    .app { width:100vw; height:100dvh; display:grid; grid-template-rows:calc(58px + env(safe-area-inset-top)) 1fr calc(80px + env(safe-area-inset-bottom)); background:var(--bg); }
+    .topbar { padding:env(safe-area-inset-top) 10px 0; display:grid; grid-template-columns:48px 1fr 48px; align-items:center; gap:8px; border-bottom:1px solid var(--border); background:#09090b; }
+    .icon-btn { width:44px; height:44px; border-radius:14px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:24px; font-weight:900; cursor:pointer; }
+    .title { text-align:center; min-width:0; overflow:hidden; }
+    .title-main { font-weight:950; font-size:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .title-sub { color:var(--muted); font-size:12px; margin-top:3px; font-weight:700; }
+    .viewer { position:relative; overflow:hidden; background:#111827; touch-action:pan-y; }
+    .viewer iframe { width:100%; height:100%; border:0; background:white; display:block; }
+    .pdf-wrap { width:100%; height:100%; background:#111827; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .chart { height:100%; overflow:auto; padding:clamp(20px,4vw,54px); background:#020617; -webkit-overflow-scrolling:touch; }
+    .chart-title { font-size:clamp(42px,7vw,82px); font-weight:1000; line-height:.98; margin-bottom:8px; }
+    .chart-key { color:var(--muted); font-size:18px; font-weight:800; margin-bottom:34px; }
+    .row { margin-bottom:30px; }
+    .chord, .lyric { margin:0; white-space:pre-wrap; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; word-break:break-word; }
+    .chord { color:var(--cyan); font-size:clamp(30px,4.8vw,54px); line-height:1.04; font-weight:1000; }
+    .lyric { color:var(--text); font-size:clamp(30px,4.8vw,54px); line-height:1.18; font-weight:750; margin-top:4px; }
+    .footer { padding:10px 12px calc(10px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:1fr 1fr; gap:12px; border-top:1px solid var(--border); background:#09090b; }
+    .nav-btn { border-radius:18px; border:1px solid #3f3f46; background:#27272a; color:#fff; font-size:20px; font-weight:1000; cursor:pointer; min-height:54px; }
+    .next { background:var(--cyan); color:#06202a; border:0; }
+    .drawer-bg { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.7); display:none; }
+    .drawer-bg.open { display:block; }
+    .drawer { width:min(88vw,410px); height:100%; background:#09090b; border-right:1px solid var(--border); padding:calc(16px + env(safe-area-inset-top)) 16px 16px; overflow:auto; box-shadow:24px 0 80px rgba(0,0,0,.55); }
+    .drawer-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:16px; }
+    .eyebrow { color:var(--cyan); font-size:12px; letter-spacing:3px; font-weight:1000; }
+    .drawer-title { font-size:27px; font-weight:1000; }
+    .logo { width:100%; max-height:150px; object-fit:contain; background:#000; border:1px solid var(--border); border-radius:18px; margin:12px 0 16px; }
+    .action { width:100%; border:0; border-radius:16px; padding:13px; background:var(--cyan); color:#06202a; font-weight:1000; margin:8px 0; cursor:pointer; }
+    .secondary { background:var(--card); color:var(--text); border:1px solid var(--border); }
+    .label { color:var(--muted); font-size:12px; letter-spacing:2px; font-weight:900; margin:20px 0 9px; }
+    .field { width:100%; border-radius:14px; border:1px solid var(--border); background:#020617; color:var(--text); padding:12px; margin-bottom:8px; }
+    .card { width:100%; text-align:left; border-radius:18px; padding:15px; background:var(--card); border:1px solid var(--border); color:var(--text); margin-bottom:10px; cursor:pointer; }
+    .card.active { background:var(--cyan); color:#06202a; border-color:var(--cyan); }
+    .card-title { font-size:18px; font-weight:1000; }
+    .card-sub { margin-top:4px; opacity:.72; font-size:13px; font-weight:700; }
+    .edit-panel { position:fixed; right:12px; top:calc(68px + env(safe-area-inset-top)); z-index:80; width:min(360px,calc(100vw - 24px)); background:rgba(9,9,11,.97); border:1px solid var(--border); border-radius:24px; padding:14px; display:none; box-shadow:0 18px 70px rgba(0,0,0,.45); }
+    .edit-panel.open { display:block; }
+    .tools { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0; }
+    .tool { min-height:44px; border-radius:14px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:18px; font-weight:900; }
+    .note { width:100%; min-height:110px; border-radius:16px; border:1px solid var(--border); background:#020617; color:#fff; padding:12px; resize:vertical; }
+    .toast { position:fixed; left:50%; bottom:calc(96px + env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:200; background:rgba(15,23,42,.96); border:1px solid var(--border); padding:10px 16px; border-radius:999px; font-weight:900; display:none; }
+    .toast.show { display:block; }
+  </style>
+</head>
+<body>
+<div id="app" class="app">
+  <header class="topbar">
+    <button class="icon-btn" id="menuBtn">☰</button>
+    <div class="title">
+      <div class="title-main" id="songTitle">Ainos Worship</div>
+      <div class="title-sub" id="songSub">Loading...</div>
+    </div>
+    <button class="icon-btn" id="editBtn">✎</button>
+  </header>
+
+  <main class="viewer" id="viewer"></main>
+
+  <footer class="footer">
+    <button class="nav-btn" id="prevBtn">◀ PREV</button>
+    <button class="nav-btn next" id="nextBtn">NEXT ▶</button>
+  </footer>
+
+  <div class="drawer-bg" id="drawerBg">
+    <aside class="drawer" onclick="event.stopPropagation()">
+      <div class="drawer-head">
+        <div>
+          <div class="eyebrow">AINOS WORSHIP</div>
+          <div class="drawer-title">Services</div>
+        </div>
+        <button class="icon-btn" id="closeDrawer">✕</button>
+      </div>
+      <img class="logo" src="ainos-logo.jpg" alt="Ainos logo" />
+
+      <button class="action" id="addService">+ Service</button>
+      <button class="action secondary" id="saveAll">Save</button>
+
+      <div class="label">CURRENT SERVICE</div>
+      <input class="field" id="serviceDate" type="date" />
+      <input class="field" id="serviceName" placeholder="Service name" />
+
+      <div class="label">SERVICE LIST</div>
+      <div id="servicesList"></div>
+
+      <div class="label">SONGS</div>
+      <button class="action" id="addSong">+ Add Song</button>
+      <div id="songsList"></div>
+
+      <div class="label">CURRENT SONG</div>
+      <input class="field" id="songNameInput" placeholder="Song title" />
+      <input class="field" id="songKeyInput" placeholder="Key" />
+      <input class="field" id="pdfUrlInput" placeholder="PDF URL" />
+      <button class="action secondary" id="useChart">Use Chart View</button>
+    </aside>
+  </div>
+
+  <section class="edit-panel" id="editPanel">
+    <div class="eyebrow">EDIT / NOTE</div>
+    <div style="font-size:22px;font-weight:1000;margin-top:4px;">Tools</div>
+    <div class="tools">
+      <button class="tool">✎</button>
+      <button class="tool">▰</button>
+      <button class="tool">T</button>
+      <button class="tool">⌫</button>
+    </div>
+    <textarea class="note" id="noteInput" placeholder="Personal note..."></textarea>
+    <button class="action" id="saveNote">Save Note</button>
+    <button class="action secondary" id="closeEdit">Close</button>
+  </section>
+
+  <div class="toast" id="toast">Saved</div>
+</div>
+
+<script>
+const demoPdf = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
+const STORAGE_KEY = "ainos-worship-working-v1";
+
+let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || {
+  serviceIndex: 0,
+  songIndex: 0,
+  services: [
+    {
+      id: "svc-1",
+      date: "2026-05-17",
+      name: "Sunday Morning",
+      songs: [
+        {
+          id: "song-1",
+          title: "Holy Forever",
+          key: "G",
+          pdfUrl: demoPdf,
+          note: "",
+          chart: [["G        D/F#", "A thousand generations"], ["Em       C", "Falling down in worship"]]
+        },
+        {
+          id: "song-2",
+          title: "나는 믿네",
+          key: "C",
+          pdfUrl: "",
+          note: "",
+          chart: [["C        G", "나는 믿네 주의 선하심"], ["Am       F", "나를 이끄시는 하나님"]]
+        }
+      ]
+    }
+  ]
+};
+
+const $ = (id) => document.getElementById(id);
+
+function service() { return state.services[state.serviceIndex] || state.services[0]; }
+function songs() { return service()?.songs || []; }
+function song() { return songs()[state.songIndex]; }
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function fitPdfUrl(url) {
+  if (!url) return "";
+  return String(url).split("#")[0] + "#view=Fit&zoom=page-fit&pagemode=none";
+}
+
+function render() {
+  const svc = service();
+  const s = song();
+
+  $("songTitle").textContent = s ? s.title : "No Song";
+  $("songSub").textContent = `${svc?.name || "Service"}${s ? " · Key " + (s.key || "-") : ""}`;
+
+  $("serviceDate").value = svc?.date || "";
+  $("serviceName").value = svc?.name || "";
+  $("songNameInput").value = s?.title || "";
+  $("songKeyInput").value = s?.key || "";
+  $("pdfUrlInput").value = s?.pdfUrl || "";
+  $("noteInput").value = s?.note || "";
+
+  renderViewer();
+  renderLists();
+}
+
+function renderViewer() {
+  const s = song();
+
+  if (!s) {
+    $("viewer").innerHTML = `<div class="chart"><div class="chart-title">No Song</div><div class="chart-key">Open menu and add a song.</div></div>`;
+    return;
+  }
+
+  if (s.pdfUrl && s.pdfUrl.trim()) {
+    $("viewer").innerHTML = `<div class="pdf-wrap"><iframe src="${escapeAttr(fitPdfUrl(s.pdfUrl))}" title="PDF"></iframe></div>`;
+    return;
+  }
+
+  const rows = (s.chart || []).map(([ch, ly]) => `
+    <div class="row">
+      <pre class="chord">${escapeHtml(ch || "")}</pre>
+      <pre class="lyric">${escapeHtml(ly || "")}</pre>
+    </div>
+  `).join("");
+
+  $("viewer").innerHTML = `
+    <div class="chart">
+      <div class="chart-title">${escapeHtml(s.title)}</div>
+      <div class="chart-key">Key ${escapeHtml(s.key || "-")}</div>
+      ${rows || `<div style="color:var(--muted);font-size:22px;">No PDF or chart yet.</div>`}
+      ${s.note ? `<div style="color:var(--amber);font-size:18px;font-weight:900;border-top:1px solid var(--border);padding-top:16px;margin-top:20px;">Note: ${escapeHtml(s.note)}</div>` : ""}
+    </div>
+  `;
+}
+
+function renderLists() {
+  $("servicesList").innerHTML = state.services.map((svc, i) => `
+    <button class="card ${i === state.serviceIndex ? "active" : ""}" data-service="${i}">
+      <div class="card-title">${escapeHtml(svc.date || "No date")}</div>
+      <div class="card-sub">${escapeHtml(svc.name || "Service")}</div>
+    </button>
+  `).join("");
+
+  $("songsList").innerHTML = songs().map((s, i) => `
+    <button class="card ${i === state.songIndex ? "active" : ""}" data-song="${i}">
+      <div class="card-title">${i + 1}. ${escapeHtml(s.title || "Untitled")}</div>
+      <div class="card-sub">Key ${escapeHtml(s.key || "-")}</div>
+    </button>
+  `).join("");
+}
+
+function nextSong() {
+  if (!songs().length) return;
+  state.songIndex = Math.min(state.songIndex + 1, songs().length - 1);
+  save(); render();
+}
+
+function prevSong() {
+  if (!songs().length) return;
+  state.songIndex = Math.max(state.songIndex - 1, 0);
+  save(); render();
+}
+
+function showToast(text) {
+  $("toast").textContent = text;
+  $("toast").classList.add("show");
+  setTimeout(() => $("toast").classList.remove("show"), 1000);
+}
+
+document.addEventListener("click", (event) => {
+  const serviceBtn = event.target.closest("[data-service]");
+  if (serviceBtn) {
+    state.serviceIndex = Number(serviceBtn.dataset.service);
+    state.songIndex = 0;
+    save(); render();
+    return;
+  }
+
+  const songBtn = event.target.closest("[data-song]");
+  if (songBtn) {
+    state.songIndex = Number(songBtn.dataset.song);
+    save(); closeDrawer(); render();
+  }
+});
+
+$("menuBtn").onclick = () => $("drawerBg").classList.add("open");
+$("closeDrawer").onclick = closeDrawer;
+$("drawerBg").onclick = closeDrawer;
+function closeDrawer() { $("drawerBg").classList.remove("open"); }
+
+$("editBtn").onclick = () => $("editPanel").classList.toggle("open");
+$("closeEdit").onclick = () => $("editPanel").classList.remove("open");
+
+$("prevBtn").onclick = prevSong;
+$("nextBtn").onclick = nextSong;
+
+$("saveAll").onclick = () => { save(); showToast("Saved"); };
+
+$("addService").onclick = () => {
+  state.services.push({ id: "svc-" + Date.now(), date: new Date().toISOString().slice(0, 10), name: "New Service", songs: [] });
+  state.serviceIndex = state.services.length - 1;
+  state.songIndex = 0;
+  save(); render();
+};
+
+$("addSong").onclick = () => {
+  service().songs = service().songs || [];
+  service().songs.push({ id: "song-" + Date.now(), title: "New Song", key: "C", pdfUrl: demoPdf, note: "", chart: [["C        G", "Lyrics here"]] });
+  state.songIndex = service().songs.length - 1;
+  save(); render();
+};
+
+$("serviceDate").oninput = (e) => { service().date = e.target.value; save(); renderLists(); };
+$("serviceName").oninput = (e) => { service().name = e.target.value; save(); render(); };
+$("songNameInput").oninput = (e) => { if (song()) song().title = e.target.value; save(); render(); };
+$("songKeyInput").oninput = (e) => { if (song()) song().key = e.target.value; save(); render(); };
+$("pdfUrlInput").onchange = (e) => { if (song()) song().pdfUrl = e.target.value; save(); render(); };
+$("useChart").onclick = () => { if (song()) song().pdfUrl = ""; save(); render(); };
+
+$("saveNote").onclick = () => {
+  if (song()) song().note = $("noteInput").value;
+  save(); render(); showToast("Note saved");
+};
+
+let startX = null;
+$("viewer").addEventListener("touchstart", (e) => { startX = e.touches[0].clientX; }, { passive: true });
+$("viewer").addEventListener("touchend", (e) => {
+  if (startX === null) return;
+  const dx = e.changedTouches[0].clientX - startX;
+  startX = null;
+  if (Math.abs(dx) < 80) return;
+  if (dx < 0) nextSong();
+  if (dx > 0) prevSong();
+}, { passive: true });
+
+function escapeHtml(str) {
+  return String(str || "").replace(/[&<>"']/g, (m) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[m]));
+}
+function escapeAttr(str) { return escapeHtml(str).replace(/`/g, "&#096;"); }
+
+render();
+</script>
+</body>
+</html>
