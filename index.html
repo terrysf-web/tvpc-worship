@@ -91,7 +91,10 @@ button.small{font-size:12px;padding:8px 10px;border-radius:10px}
   background:#050608;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;
 }
 .vbottom button{border-radius:14px}
-.hint{display:none!important;opacity:0!important;visibility:hidden!important;}
+.hint{display:none!important;visibility:hidden!important;opacity:0!important;
+  position:absolute;bottom:calc(84px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.68);color:#fff;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:900;z-index:60;
+}
 .toast{
   position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);
   background:rgba(15,23,42,.94);color:white;border-radius:999px;padding:10px 14px;font-size:13px;font-weight:900;z-index:200;
@@ -105,7 +108,7 @@ button.small{font-size:12px;padding:8px 10px;border-radius:10px}
 <div id="app"></div>
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-const BUILD="AINOS_HINT_REMOVED_FIXED";
+const BUILD="AINOS_HINT_REMOVED_VERIFIED";
 const DB="tvpc_ainos_integrated_stable_v1", STORE="pdfs";
 let dbp=null;
 function openDB(){if(dbp)return dbp;dbp=new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});return dbp}
